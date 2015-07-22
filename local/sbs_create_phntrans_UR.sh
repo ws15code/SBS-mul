@@ -1,16 +1,11 @@
 #!/bin/bash
 
 #sbs_create_phntrans_UR.sh
-#usage: scriptname.sh listOfUtteranceIDs g2pDict numeralsDict transcriptDir temporaryStorageDir
+#usage: scriptname.sh listOfUtteranceIDs g2pDict transcriptDir
 
 LISTOFUTTID=$1
 PHONEDICT=$2
-NUMERALDICT=$3
-DATADIR=$4
-TEMPDIR=$5
-
-#Preprocess the transcripts by replacing numerals with spelled out names
-python sbs_transcripts_preprocess.py $LISTOFUTTID $NUMERALDICT $DATADIR $TEMPDIR 
+DATADIR=$3
 
 #Create the Phonemic transcriptions
-python sbs_create_phntrans_UR.py $LISTOFUTTID $PHONEDICT $TEMPDIR
+python ./local/sbs_create_phntrans_UR.py $LISTOFUTTID $PHONEDICT $DATADIR

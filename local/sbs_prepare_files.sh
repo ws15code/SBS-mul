@@ -82,7 +82,7 @@ for x in train eval; do
         set +e
         base=`basename $line .wav`
         wavfile="$SBSDIR/$full_name/$base.wav"
-        # sox $wavfile -r 8000 -t wav data/$LCODE/wav/$x/$base.wav 
+        sox $wavfile -r 8000 -t wav data/$LCODE/wav/$x/$base.wav 
         if [ $? -ne 0 ]; then
             echo "$wavfile: exit status = $?" >> $soxerr
             let "nsoxerr+=1"
@@ -133,6 +133,9 @@ for x in train eval; do
             ;;
         SW)
             ./local/sbs_create_phntrans_SW.pl --g2p conf/${full_name}/g2pmap.txt --utts $tmpdir/downsample/${x}_basenames_wav --transdir $tmpdir/trans --wordlist conf/${full_name}/wordlist.txt | LC_ALL=en_US.UTF-8 local/uni-phone.py > $tmpdir/${LCODE}_${x}.trans
+            ;;
+        UR)
+            ./local/sbs_create_phntrans_UR.sh $tmpdir/downsample/${x}_basenames_wav conf/${full_name}/g2pmap.txt $TRANSDIR/${full_name} > $tmpdir/${LCODE}_${x}.trans
             ;;
         *) 
             echo "Unknown language code $LCODE." && exit 1
