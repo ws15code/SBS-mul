@@ -1,4 +1,4 @@
-#!/bin/bash -u
+#!/bin/bash -e
 
 # This script shows the steps needed to build a recognizer for certain matched languages (Arabic, Dutch, Mandarin, Hungarian, Swahili, Urdu) of the SBS corpus. 
 # (Adapted from the egs/gp script run.sh)
@@ -20,8 +20,8 @@ NUMLEAVES=1200
 NUMGAUSSIANS=8000
 
 # Set the language codes for SBS languages that we will be processing
-export SBS_LANGUAGES="MD SW AR UR"
-export TRAIN_LANG="SW AR UR"
+export SBS_LANGUAGES="SW AR UR DT HG MD"
+export TRAIN_LANG="SW AR UR DT HG"
 export TEST_LANG="MD"
 
 #### LANGUAGE SPECIFIC SCRIPTS HERE ####
@@ -88,8 +88,9 @@ utils/mkgraph.sh --mono data/lang_test exp/mono \
   $graph_dir >& $graph_dir/mkgraph.log
 for L in $SBS_LANGUAGES; do
   steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
-    exp/mono/decode_eval_$L
+    exp/mono/decode_eval_$L &
 done
+wait
 
 # Training/decoding triphone models
 mkdir -p exp/mono_ali
@@ -110,8 +111,11 @@ utils/mkgraph.sh data/lang_test exp/tri1 $graph_dir \
 
 for L in $SBS_LANGUAGES; do
   steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
-    exp/tri1/decode_eval_$L
+    exp/tri1/decode_eval_$L &
 done
+wait
+
+exit
 
 mkdir -p exp/tri1_ali
 steps/align_si.sh --nj 8 --cmd "$train_cmd" \
