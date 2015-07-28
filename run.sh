@@ -42,7 +42,6 @@ for L in $SBS_LANGUAGES; do
   echo "LM prep: $L"
   local/sbs_format_phnlm.sh $L >& data/$L/format_lm.log || exit 1;
 done
-wait
 
 echo "MFCC prep"
 # Make MFCC features.
@@ -86,6 +85,7 @@ graph_dir=exp/mono/graph
 mkdir -p $graph_dir
 utils/mkgraph.sh --mono data/lang_test exp/mono \
   $graph_dir >& $graph_dir/mkgraph.log
+
 for L in $SBS_LANGUAGES; do
   steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
     exp/mono/decode_eval_$L &
@@ -114,8 +114,6 @@ for L in $SBS_LANGUAGES; do
     exp/tri1/decode_eval_$L &
 done
 wait
-
-exit
 
 mkdir -p exp/tri1_ali
 steps/align_si.sh --nj 8 --cmd "$train_cmd" \
