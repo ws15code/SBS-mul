@@ -21,12 +21,14 @@ NUMGAUSSIANS=8000
 
 # Set the language codes for SBS languages that we will be processing
 export SBS_LANGUAGES="SW AR UR DT HG MD"
-export TRAIN_LANG="SW AR UR DT HG"
-export TEST_LANG="MD"
+export TRAIN_LANG="AR UR DT HG MD"
+export TEST_LANG="SW"
 
 #### LANGUAGE SPECIFIC SCRIPTS HERE ####
 local/sbs_data_prep.sh --config-dir=$PWD/conf --corpus-dir=$SBS_CORPUS \
   --languages="$SBS_LANGUAGES"  --trans-dir=$SBS_TRANSCRIPTS --list-dir=$SBS_DATA_LISTS
+
+local/sbs_uni_data_prep.sh "$TRAIN_LANG" "$TEST_LANG"
 
 echo "dict prep"
 local/sbs_dict_prep.sh $SBS_LANGUAGES >& data/prepare_dict.log
@@ -43,6 +45,14 @@ for L in $SBS_LANGUAGES; do
   local/sbs_format_phnlm.sh $L >& data/$L/format_lm.log || exit 1;
 done
 
+echo "universal lang"
+utils/prepare_lang.sh --position-dependent-phones false \
+  data/local/dict "<unk>" data/local/lang_tmp data/lang \
+  >& data/prepare_lang.log || exit 1;
+
+echo "universal LM"
+local/sbs_format_uniphnlm.sh >& data/format_lm.log || exit 1;
+
 echo "MFCC prep"
 # Make MFCC features.
 for L in $SBS_LANGUAGES; do
@@ -56,16 +66,6 @@ for L in $SBS_LANGUAGES; do
   done
 done
 wait;
-
-local/sbs_uni_data_prep.sh "$TRAIN_LANG" "$TEST_LANG"
-
-echo "universal lang"
-utils/prepare_lang.sh --position-dependent-phones false \
-  data/local/dict "<unk>" data/local/lang_tmp data/lang \
-  2>&1 | tee data/prepare_lang.log || exit 1;
-
-echo "universal LM"
-local/sbs_format_uniphnlm.sh 2>&1 | tee data/format_lm.log || exit 1;
 
 mfccdir=mfcc
 # for x in train eval; do

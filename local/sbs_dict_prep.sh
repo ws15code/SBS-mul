@@ -65,6 +65,7 @@ for L in $LANGUAGES; do
   printf "Language - ${L}: preparing pronunciation lexicon ... "
   mkdir -p data/$L/local/dict
   full_name=`awk '/'$L'/ {print $2}' $config_dir/lang_codes.txt`;
+  mkdir -p conf/${full_name}
   phones=$config_dir/$full_name/phones.txt
   cut -f2- $srcdir/train_text | tr ' ' '\n' | sort -u > $phones
 
@@ -93,8 +94,8 @@ srcdir=data/local/data
 printf "preparing pronunciation lexicon ... "
 mkdir -p data/local/dict
 phones=$config_dir/phones.txt
-# cut -f2- $srcdir/train_text | tr ' ' '\n' | sort -u > $phones
-awk '{print $1}' conf/univphones.txt | grep -v '#0' | grep -v '<eps>' > $phones
+cut -f2- $srcdir/train_text | tr ' ' '\n' | sort -u > $phones
+# awk '{print $1}' conf/univphones.txt | grep -v '#0' | grep -v '<eps>' > $phones
 
 awk '{print $1"\t"$1}' $phones > data/local/dict/lexicon_nosil.txt
 
