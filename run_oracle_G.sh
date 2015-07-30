@@ -71,6 +71,9 @@ for L in $SBS_LANGUAGES; do
   utils/mkgraph.sh data/$L/lang_test_oracle_G exp/tri3b \
     $graph_dir >& $graph_dir/mkgraph.log
 
+  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/dev \
+    exp/tri3b/decode_dev_oracle_G_$L &
+      
   steps/decode_fmllr.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
     exp/tri3b/decode_eval_oracle_G_$L &
 done
