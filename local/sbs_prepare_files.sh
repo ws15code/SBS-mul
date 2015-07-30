@@ -64,14 +64,14 @@ which sox > /dev/null
 mkdir -p data/$LCODE/wav # directory storing all the downsampled WAV files
 tmpdir=$(mktemp -d);
 echo $tmpdir
-# trap 'rm -rf "$tmpdir"' EXIT
+trap 'rm -rf "$tmpdir"' EXIT
 mkdir -p $tmpdir
 mkdir -p $tmpdir/downsample
 mkdir -p $tmpdir/trans
 
 soxerr=$tmpdir/soxerr;
 
-for x in train eval; do
+for x in train dev eval; do
     echo "Downsampling"
 
     file="$LISTDIR/$full_name/$x.txt"
@@ -82,16 +82,17 @@ for x in train eval; do
         set +e
         base=`basename $line .wav`
         wavfile="$SBSDIR/$full_name/$base.wav"
-        sox $wavfile -r 8000 -t wav data/$LCODE/wav/$x/$base.wav 
+        outwavfile="data/$LCODE/wav/$x/$base.wav"
+        [[ -e $outwavfile ]] || sox $wavfile -r 8000 -t wav $outwavfile 
         if [ $? -ne 0 ]; then
             echo "$wavfile: exit status = $?" >> $soxerr
             let "nsoxerr+=1"
         else 
-            nsamples=`soxi -s "$wavfile"`;
+            nsamples=`soxi -s "$outwavfile"`;
             if [[ "$nsamples" -gt 1000 ]]; then
-                echo "$wavfile" >> $tmpdir/downsample/${x}_wav
+                echo "$outwavfile" >> $tmpdir/downsample/${x}_wav
             else
-                echo "$wavfile: #samples = $nsamples" >> $soxerr;
+                echo "$outwavfile: #samples = $nsamples" >> $soxerr;
                 let "nsoxerr+=1"
             fi
         fi

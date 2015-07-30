@@ -76,7 +76,7 @@ echo "Done."
 for L in $LANGUAGES; do
     echo "Language $L: Building train/test data..."
 
-    for x in train eval; do
+    for x in train dev eval; do
         mkdir -p data/$L/$x
         cp data/$L/local/data/${x}_wav.scp data/$L/$x/wav.scp
         cp data/$L/local/data/${x}_text data/$L/$x/text

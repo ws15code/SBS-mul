@@ -34,8 +34,11 @@ gen_set() {
     cp data/local/data/${x}_text data/$x/text
     cp data/local/data/${x}_utt2spk data/$x/utt2spk
     cp data/local/data/${x}_spk2utt data/$x/spk2utt
+    
+    rm ${wav_tmp}  ${utt2spk_tmp} ${text_tmp}
 
 }
 
 gen_set train "${train_lang}"
+gen_set dev "${test_lang}"
 gen_set eval "${test_lang}"

@@ -25,13 +25,15 @@ export TRAIN_LANG="AR UR DT HG MD"
 export TEST_LANG="SW"
 
 #### LANGUAGE SPECIFIC SCRIPTS HERE ####
+#: << 'comment'
+#comment
 local/sbs_data_prep.sh --config-dir=$PWD/conf --corpus-dir=$SBS_CORPUS \
   --languages="$SBS_LANGUAGES"  --trans-dir=$SBS_TRANSCRIPTS --list-dir=$SBS_DATA_LISTS
 
 local/sbs_uni_data_prep.sh "$TRAIN_LANG" "$TEST_LANG"
 
 echo "dict prep"
-local/sbs_dict_prep.sh $SBS_LANGUAGES >& data/prepare_dict.log
+local/sbs_dict_prep.sh $SBS_LANGUAGES | tee data/prepare_dict.log
 
 for L in $SBS_LANGUAGES; do
   echo "lang prep: $L"
@@ -53,15 +55,20 @@ utils/prepare_lang.sh --position-dependent-phones false \
 echo "universal LM"
 local/sbs_format_uniphnlm.sh >& data/format_lm.log || exit 1;
 
+
 echo "MFCC prep"
 # Make MFCC features.
 for L in $SBS_LANGUAGES; do
   mfccdir=mfcc/$L
-  for x in train eval; do
+  for x in train dev eval; do
     (
-      steps/make_mfcc.sh --nj 4 --cmd "$train_cmd" data/$L/$x \
-        exp/$L/make_mfcc/$x $mfccdir;
-      steps/compute_cmvn_stats.sh data/$L/$x exp/$L/make_mfcc/$x $mfccdir;
+      if [[ ! -f data/$L/$x/.mfcc.done ]]; then
+		steps/make_mfcc.sh --nj 4 --cmd "$train_cmd" data/$L/$x exp/$L/make_mfcc/$x $mfccdir;
+		utils/fix_data_dir.sh data/$L/$x  
+		steps/compute_cmvn_stats.sh data/$L/$x exp/$L/make_mfcc/$x $mfccdir;
+		utils/fix_data_dir.sh data/$L/$x
+		touch data/$L/$x/.mfcc.done
+      fi
     ) &
   done
 done
@@ -69,72 +76,84 @@ wait;
 
 mfccdir=mfcc
 # for x in train eval; do
-for x in train eval; do
+for x in train dev eval; do
   (
-    steps/make_mfcc.sh --nj 4 --cmd "$train_cmd" data/$x exp/make_mfcc/$x $mfccdir;
-    steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir;
+    if [[ ! -f data/$x/.mfcc.done ]]; then
+	 steps/make_mfcc.sh --nj 4 --cmd "$train_cmd" data/$x exp/make_mfcc/$x $mfccdir;
+	 utils/fix_data_dir.sh data/$x  
+	 steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir;
+	 utils/fix_data_dir.sh data/$x  
+	 touch data/$x/.mfcc.done
+    fi
   ) &
 done
 wait;
 
+if [ ! -f exp/mono/.done ]; then
 mkdir -p exp/mono;
 steps/train_mono.sh --nj 8 --cmd "$train_cmd" \
-  data/train data/lang exp/mono >& exp/mono/train.log
+  data/train data/lang exp/mono | tee exp/mono/train.log
 
 graph_dir=exp/mono/graph
 mkdir -p $graph_dir
 utils/mkgraph.sh --mono data/lang_test exp/mono \
-  $graph_dir >& $graph_dir/mkgraph.log
+  $graph_dir | tee $graph_dir/mkgraph.log
 
 for L in $SBS_LANGUAGES; do
   steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
     exp/mono/decode_eval_$L &
 done
 wait
+touch exp/mono/.done
+fi
 
 # Training/decoding triphone models
+if [ ! -f exp/tri1/.done ]; then
 mkdir -p exp/mono_ali
 steps/align_si.sh --nj 8 --cmd "$train_cmd" \
   data/train data/lang exp/mono exp/mono_ali \
-  >& exp/mono_ali/align.log 
+  | tee exp/mono_ali/align.log 
 
 # Training triphone models with MFCC+deltas+double-deltas
 mkdir -p exp/tri1
 steps/train_deltas.sh --boost-silence 1.25 --cmd "$train_cmd" $NUMLEAVES $NUMGAUSSIANS \
-  data/train data/lang exp/mono_ali exp/tri1 >& exp/tri1/train.log || exit 1;
+  data/train data/lang exp/mono_ali exp/tri1 | tee exp/tri1/train.log || exit 1;
 
 graph_dir=exp/tri1/graph
 mkdir -p $graph_dir
 
 utils/mkgraph.sh data/lang_test exp/tri1 $graph_dir \
-  >& $graph_dir/mkgraph.log 
+  | tee $graph_dir/mkgraph.log 
 
 for L in $SBS_LANGUAGES; do
   steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
     exp/tri1/decode_eval_$L &
 done
 wait
+touch exp/tri1/.done
+fi
 
+if [ ! -f exp/tri2b/.done ]; then
 mkdir -p exp/tri1_ali
 steps/align_si.sh --nj 8 --cmd "$train_cmd" \
   data/train data/lang exp/tri1 exp/tri1_ali \
-  >& exp/tri1_ali/align.log 
+  | tee exp/tri1_ali/align.log 
 
-mkdir -p exp/tri2a
-steps/train_deltas.sh --cmd "$train_cmd" $NUMLEAVES $NUMGAUSSIANS \
-  data/train data/lang exp/tri1_ali exp/tri2a || exit 1;
+#mkdir -p exp/tri2a
+#steps/train_deltas.sh --cmd "$train_cmd" $NUMLEAVES $NUMGAUSSIANS \
+  #data/train data/lang exp/tri1_ali exp/tri2a || exit 1;
 
-graph_dir=exp/tri2a/graph
-mkdir -p $graph_dir
+#graph_dir=exp/tri2a/graph
+#mkdir -p $graph_dir
       
-utils/mkgraph.sh data/lang_test exp/tri2a $graph_dir \
-  >& $graph_dir/mkgraph.log 
+#utils/mkgraph.sh data/lang_test exp/tri2a $graph_dir \
+  #>& $graph_dir/mkgraph.log 
 
-for L in $SBS_LANGUAGES; do
-  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
-    exp/tri2a/decode_eval_$L &
-done
-wait
+#for L in $SBS_LANGUAGES; do
+  #steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
+    #exp/tri2a/decode_eval_$L &
+#done
+#wait
 
 mkdir -p exp/tri2b
 steps/train_lda_mllt.sh --cmd "$train_cmd" \
@@ -146,33 +165,47 @@ graph_dir=exp/tri2b/graph
 mkdir -p $graph_dir
       
 utils/mkgraph.sh data/lang_test exp/tri2b $graph_dir \
-  >& $graph_dir/mkgraph.log 
+  | tee $graph_dir/mkgraph.log 
+
+for L in $SBS_LANGUAGES; do
+  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/dev \
+    exp/tri2b/decode_dev_$L &
+done
 
 for L in $SBS_LANGUAGES; do
   steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
     exp/tri2b/decode_eval_$L &
 done
 wait
+touch exp/tri2b/.done
+fi
 
+if [ ! -f exp/tri3b/.done ]; then
 mkdir -p exp/tri2b_ali
 
 steps/align_si.sh --nj 8 --cmd "$train_cmd" --use-graphs true \
   data/train data/lang exp/tri2b exp/tri2b_ali \
-  >& exp/tri2b_ali/align.log 
+  | tee exp/tri2b_ali/align.log 
 
 steps/train_sat.sh --cmd "$train_cmd" $NUMLEAVES $NUMGAUSSIANS \
-  data/train data/lang exp/tri2b exp/tri3b || exit 1;
+  data/train data/lang exp/tri2b_ali exp/tri3b || exit 1;
 
 graph_dir=exp/tri3b/graph
 mkdir -p $graph_dir
 utils/mkgraph.sh data/lang_test exp/tri3b $graph_dir \
-  >& $graph_dir/mkgraph.log
+  | tee $graph_dir/mkgraph.log
+
+for L in $SBS_LANGUAGES; do
+  steps/decode_fmllr.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/dev \
+    exp/tri3b/decode_dev_$L &
+done
 
 for L in $SBS_LANGUAGES; do
   steps/decode_fmllr.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
     exp/tri3b/decode_eval_$L &
 done
 wait
-
+touch exp/tri3b/.done
+fi
 # Getting PER numbers
 # for x in exp/*/*/decode*; do [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh; done
