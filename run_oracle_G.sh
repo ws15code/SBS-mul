@@ -6,17 +6,23 @@
 
 set -e
 
+stage=0
+
 . ./cmd.sh
 . ./path.sh
+. parse_options.sh || exit 1;
 
-SBS_LANGAUGES="AR DT HG MD SW UR"
+SBS_LANGUAGES="AR DT HG MD SW UR"
 
+if [ $stage -le 0 ]; then
 for L in $SBS_LANGUAGES; do
   echo "Prep oracle G for $L"
   local/sbs_format_oracle_G.sh $L >& data/$L/format_oracle_G.log
 done
+fi
 
-# Decode with oracle G
+# Decode with oracle G: mono
+if [ $stage -le 1 ]; then
 for L in $SBS_LANGUAGES; do
   graph_dir=exp/mono/$L/graph_oracle_G
   mkdir -p $graph_dir
@@ -27,8 +33,10 @@ for L in $SBS_LANGUAGES; do
     exp/mono/decode_eval_oracle_G_$L &
 done
 wait
+fi
 
-# Decode with oracle G
+# Decode with oracle G: tri1
+if [ $stage -le 2 ]; then
 for L in $SBS_LANGUAGES; do
   graph_dir=exp/tri1/$L/graph_oracle_G
   mkdir -p $graph_dir
@@ -39,20 +47,24 @@ for L in $SBS_LANGUAGES; do
     exp/tri1/decode_eval_oracle_G_$L &
 done
 wait
+fi
 
-# Decode with oracle G
-for L in $SBS_LANGUAGES; do
-  graph_dir=exp/tri2a/$L/graph_oracle_G
-  mkdir -p $graph_dir
-  utils/mkgraph.sh data/$L/lang_test_oracle_G exp/tri2a \
-    $graph_dir >& $graph_dir/mkgraph.log
+## Decode with oracle G
+#if [ $stage -le 3 ]; then
+#for L in $SBS_LANGUAGES; do
+  #graph_dir=exp/tri2a/$L/graph_oracle_G
+  #mkdir -p $graph_dir
+  #utils/mkgraph.sh data/$L/lang_test_oracle_G exp/tri2a \
+    #$graph_dir >& $graph_dir/mkgraph.log
 
-  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
-    exp/tri2a/decode_eval_oracle_G_$L &
-done
-wait
+  #steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
+    #exp/tri2a/decode_eval_oracle_G_$L &
+#done
+#wait
+fi
 
-# Decode with oracle G
+# Decode with oracle G: tri2b
+if [ $stage -le 3 ]; then
 for L in $SBS_LANGUAGES; do
   graph_dir=exp/tri2b/$L/graph_oracle_G
   mkdir -p $graph_dir
@@ -63,8 +75,10 @@ for L in $SBS_LANGUAGES; do
     exp/tri2b/decode_eval_oracle_G_$L &
 done
 wait
+fi
 
-# Decode with oracle G
+# Decode with oracle G: tri3b
+if [ $stage -le 4 ]; then
 for L in $SBS_LANGUAGES; do
   graph_dir=exp/tri3b/$L/graph_oracle_G
   mkdir -p $graph_dir
@@ -78,4 +92,4 @@ for L in $SBS_LANGUAGES; do
     exp/tri3b/decode_eval_oracle_G_$L &
 done
 wait
-
+fi
