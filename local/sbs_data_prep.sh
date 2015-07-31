@@ -65,8 +65,7 @@ for L in $LANGUAGES; do
         --list-dir=$LISTDIR \
         --lang-map=$CONFDIR/lang_codes.txt \
         --eng-ipa-map=$CONFDIR/eng/eng-ARPA2IPA.txt \
-        --eng-dict=$CONFDIR/eng/eng-cmu-dict.txt \
-        $L >& data/$L/local/prepare_files.log & 
+        --eng-dict=$CONFDIR/eng/eng-cmu-dict.txt $L
 done
 wait;
 echo "Done." 
