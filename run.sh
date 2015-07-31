@@ -36,20 +36,20 @@ local/sbs_dict_prep.sh $SBS_LANGUAGES
 for L in $SBS_LANGUAGES; do
   echo "lang prep: $L"
   utils/prepare_lang.sh --position-dependent-phones false \
-    data/$L/local/dict "<unk>" data/$L/local/lang_tmp data/$L/lang;
+    data/$L/local/dict "<unk>" data/$L/local/lang_tmp data/$L/lang
 done
 
 for L in $SBS_LANGUAGES; do
   echo "LM prep: $L"
-  local/sbs_format_phnlm.sh $L;
+  local/sbs_format_phnlm.sh $L
 done
 
 echo "universal lang"
 utils/prepare_lang.sh --position-dependent-phones false \
-  data/local/dict "<unk>" data/local/lang_tmp data/lang;
+  data/local/dict "<unk>" data/local/lang_tmp data/lang
 
 echo "universal LM"
-local/sbs_format_uniphnlm.sh;
+local/sbs_format_uniphnlm.sh
 
 echo "MFCC prep"
 # Make MFCC features.
@@ -57,21 +57,21 @@ for L in $SBS_LANGUAGES; do
   mfccdir=mfcc/$L
   for x in train dev eval; do
     (
-      steps/make_mfcc.sh --nj 4 --cmd "$train_cmd" data/$L/$x exp/$L/make_mfcc/$x $mfccdir;
-      steps/compute_cmvn_stats.sh data/$L/$x exp/$L/make_mfcc/$x $mfccdir;
+      steps/make_mfcc.sh --nj 4 --cmd "$train_cmd" data/$L/$x exp/$L/make_mfcc/$x $mfccdir
+      steps/compute_cmvn_stats.sh data/$L/$x exp/$L/make_mfcc/$x $mfccdir
     ) &
   done
 done
-wait;
+wait
 
 mfccdir=mfcc
 for x in train dev eval; do
   (
-    steps/make_mfcc.sh --nj 4 --cmd "$train_cmd" data/$x exp/make_mfcc/$x $mfccdir;
-    steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir;
+    steps/make_mfcc.sh --nj 4 --cmd "$train_cmd" data/$x exp/make_mfcc/$x $mfccdir
+    steps/compute_cmvn_stats.sh data/$x exp/make_mfcc/$x $mfccdir
   ) &
 done
-wait;
+wait
 
 mkdir -p exp/mono;
 steps/train_mono.sh --nj 8 --cmd "$train_cmd" \
@@ -79,11 +79,12 @@ steps/train_mono.sh --nj 8 --cmd "$train_cmd" \
 
 graph_dir=exp/mono/graph
 mkdir -p $graph_dir
+
 utils/mkgraph.sh --mono data/lang_test exp/mono $graph_dir
 
 for L in $SBS_LANGUAGES; do
-  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
-    exp/mono/decode_eval_$L &
+  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/dev \
+    exp/mono/decode_dev_$L &
 done
 wait
 
@@ -103,8 +104,8 @@ mkdir -p $graph_dir
 utils/mkgraph.sh data/lang_test exp/tri1 $graph_dir
 
 for L in $SBS_LANGUAGES; do
-  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
-    exp/tri1/decode_eval_$L &
+  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/dev \
+    exp/tri1/decode_dev_$L &
 done
 wait
 
@@ -127,11 +128,6 @@ for L in $SBS_LANGUAGES; do
   steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/dev \
     exp/tri2b/decode_dev_$L &
 done
-
-for L in $SBS_LANGUAGES; do
-  steps/decode.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
-    exp/tri2b/decode_eval_$L &
-done
 wait
 
 mkdir -p exp/tri2b_ali
@@ -148,11 +144,6 @@ utils/mkgraph.sh data/lang_test exp/tri3b $graph_dir
 for L in $SBS_LANGUAGES; do
   steps/decode_fmllr.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/dev \
     exp/tri3b/decode_dev_$L &
-done
-
-for L in $SBS_LANGUAGES; do
-  steps/decode_fmllr.sh --nj 4 --cmd "$decode_cmd" $graph_dir data/$L/eval \
-    exp/tri3b/decode_eval_$L &
 done
 wait
 
