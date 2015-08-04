@@ -58,7 +58,7 @@ wait
 
 # Decode with oracle G: tri3b
 for L in $SBS_LANGUAGES; do
-  graph_dir=exp/tri3b/$L/graph_text_LG
+  graph_dir=exp/tri3b/$L/graph_text_G
   mkdir -p $graph_dir
   utils/mkgraph.sh data/$L/lang_test_text_G exp/tri3b \
     $graph_dir >& $graph_dir/mkgraph.log
