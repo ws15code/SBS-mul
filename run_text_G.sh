@@ -22,7 +22,7 @@ done
 
 # Decode with oracle G: mono
 for L in $SBS_LANGUAGES; do
-  graph_dir=exp/mono/$L/graph_oracle_LG
+  graph_dir=exp/mono/$L/graph_text_G
   mkdir -p $graph_dir
   utils/mkgraph.sh --mono data/$L/lang_test_text_G exp/mono \
     $graph_dir >& $graph_dir/mkgraph.log
@@ -34,7 +34,7 @@ wait
 
 # Decode with oracle G: tri1 
 for L in $SBS_LANGUAGES; do
-  graph_dir=exp/tri1/$L/graph_oracle_LG
+  graph_dir=exp/tri1/$L/graph_text_G
   mkdir -p $graph_dir
   utils/mkgraph.sh data/$L/lang_test_text_G exp/tri1 \
     $graph_dir >& $graph_dir/mkgraph.log
@@ -46,7 +46,7 @@ wait
 
 # Decode with oracle G: tri2b
 for L in $SBS_LANGUAGES; do
-  graph_dir=exp/tri2b/$L/graph_oracle_LG
+  graph_dir=exp/tri2b/$L/graph_text_G
   mkdir -p $graph_dir
   utils/mkgraph.sh data/$L/lang_test_text_G exp/tri2b \
     $graph_dir >& $graph_dir/mkgraph.log
@@ -58,7 +58,7 @@ wait
 
 # Decode with oracle G: tri3b
 for L in $SBS_LANGUAGES; do
-  graph_dir=exp/tri3b/$L/graph_oracle_LG
+  graph_dir=exp/tri3b/$L/graph_text_LG
   mkdir -p $graph_dir
   utils/mkgraph.sh data/$L/lang_test_text_G exp/tri3b \
     $graph_dir >& $graph_dir/mkgraph.log
