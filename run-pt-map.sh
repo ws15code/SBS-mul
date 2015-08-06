@@ -18,6 +18,7 @@ stage=0
 # Probably need to make corresponding change to this stage to process 
 # different raw pt lattices. Here is an eg.
 dir_raw_pt=       # add the directory of raw pt
+prune_wt=1		 # prune PTs to make the compile-train-graphs stage computationally feasible;this value can be tuned on the dev set
 dir_fsts=exp/data_pt
 if [ $stage -le -1 ]; then
   mkdir -p $dir_exp
@@ -25,7 +26,7 @@ if [ $stage -le -1 ]; then
   #for f in $dir/*saus.fst; do
   for f in $dir_raw_pt/*lat.fst; do
     fstprint $f |  awk -v sym=$disambig_sym '{if (NF > 3 && $3 == 0) {$3 = sym}; print}' | \
-      fstcompile > $dir_fsts/${f##/*/}
+      fstcompile | fstprune --weight=$prune_wt > $dir_fsts/${f##/*/}
   done
   echo ------------------------------------------
 fi
