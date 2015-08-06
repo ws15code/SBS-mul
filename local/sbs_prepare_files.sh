@@ -69,6 +69,8 @@ mkdir -p $tmpdir
 mkdir -p $tmpdir/downsample
 mkdir -p $tmpdir/trans
 
+mkdir -p conf/${full_name}
+
 soxerr=$tmpdir/soxerr;
 
 for x in train dev eval; do
@@ -83,7 +85,7 @@ for x in train dev eval; do
         base=`basename $line .wav`
         wavfile="$SBSDIR/$full_name/$base.wav"
         outwavfile="data/$LCODE/wav/$x/$base.wav"
-        [[ -e $outwavfile ]] || sox $wavfile -r 8000 -t wav $outwavfile 
+        [[ -e $outwavfile ]] || sox $wavfile -R -r 8000 -t wav $outwavfile
         if [ $? -ne 0 ]; then
             echo "$wavfile: exit status = $?" >> $soxerr
             let "nsoxerr+=1"
