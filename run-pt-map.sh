@@ -21,7 +21,7 @@ dir_raw_pt=       # add the directory of raw pt
 prune_wt=1		 # prune PTs to make the compile-train-graphs stage computationally feasible;this value can be tuned on the dev set
 dir_fsts=exp/data_pt
 if [ $stage -le -1 ]; then
-  mkdir -p $dir_exp
+  mkdir -p $dir_fsts
   disambig_sym=`grep "#0" data/lang/words.txt | awk '{print $2}'`
   #for f in $dir/*saus.fst; do
   for f in $dir_raw_pt/*lat.fst; do
@@ -83,12 +83,12 @@ for L in $TEST_LANG; do
     echo ------------------------------------------
 
     steps/decode_fmllr.sh --nj "$decode_nj" --cmd "$decode_cmd" $graph_dir \
-      data/eval $exp_dir/decode_eval || exit 1;
+      data/$L/dev $exp_dir/decode_dev || exit 1;
     echo ------------------------------------------
 
-    grep WER $exp_dir/decode_eval.si/wer_* | sort -nk2 | head -n2
+    grep WER $exp_dir/decode_dev.si/wer_* | sort -nk2 | head -n2
     echo -------------------------------
-    grep WER $exp_dir/decode_eval/wer_* | sort -nk2 | head -n2
+    grep WER $exp_dir/decode_dev/wer_* | sort -nk2 | head -n2
     echo -------------------------------
     echo `date`
   fi
