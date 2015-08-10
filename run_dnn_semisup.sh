@@ -18,15 +18,12 @@ feats_nj=40
 train_nj=20
 decode_nj=5
 stage=-100 # resume training with --stage=N
-parallel_opts="--num-threads 6"
-num_copies=3
-threshold=0.7
-use_soft_counts=false
 
 # Semi-supervised training options
 num_copies=3    # Make this many copies of supervised data
 threshold=      # If provided, use frame thresholding -- keep only frames whose
                 # best path posterior is above this value
+use_soft_counts=false
 
 # Decode Config:
 acwt=0.2
