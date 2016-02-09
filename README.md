@@ -10,3 +10,5 @@ ln -s ../wsj/s5/steps steps;
 ln -s ../wsj/s5/utils utils;
 qsub -cwd ./run.sh;
 ```
+
+The command `qsub` may first need `sudo apt-get install gridengine-client`.
